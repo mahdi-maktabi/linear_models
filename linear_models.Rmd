@@ -1,0 +1,13 @@
+---
+title: "Linear Models"
+author: "Mahdi Maktabi"
+date: "Nov 7, 2024"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(p8105.datasets)
+```
+
+
