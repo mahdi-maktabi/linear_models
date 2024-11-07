@@ -120,3 +120,129 @@ nyc_airbnb |>
   geom_point()
 ```
 
+
+
+## Hypothesis Testing
+
+for single coefficients, look at the table.
+
+```{r}
+fit |> 
+  broom::tidy()
+```
+
+```{r}
+fit_null = lm(price ~ stars + borough, data = nyc_airbnb)
+fit_alt = lm(price ~ stars + borough + room_type, data = nyc_airbnb)
+```
+
+
+Look at both.
+
+```{r}
+fit_null |> 
+  broom::tidy()
+
+fit_alt |> 
+  broom::tidy()
+
+anova(fit_null, fit_alt) |> 
+  broom::tidy()
+```
+
+## Do effects differ across boroughs
+
+First, use a lot of interactions.
+
+```{r}
+nyc_airbnb |> 
+  lm(price ~ stars * borough + room_type * borough, data = _) |> 
+  broom::tidy()
+```
+
+Could just fit separate models.
+
+```{r}
+nyc_airbnb |> 
+  filter(borough == "Manhattan") |> 
+  lm(price ~ stars + room_type, data = _) |> 
+  broom::tidy()
+
+nyc_airbnb |> 
+  filter(borough == "Brooklyn") |> 
+  lm(price ~ stars + room_type, data = _) |> 
+  broom::tidy()
+```
+
+Get fancy and use list columns.
+
+```{r}
+nyc_airbnb |> 
+  nest(data = -borough) |> 
+  mutate(
+    model = map(data, \(x) lm(price ~ stars + room_type, data = x)), 
+    results = map(model, broom::tidy)
+  ) |> 
+  select(borough, results) |> 
+  unnest(results) |> 
+  select(borough, term, estimate) |> 
+  pivot_wider(
+    names_from = term, 
+    values_from = estimate
+  )
+```
+
+What about room type across manhattan neighborhoods?
+
+```{r}
+nyc_airbnb |> 
+  filter(borough == "Manhattan",
+         neighborhood == "Chinatown") |> 
+  lm(price ~ stars + room_type, data = _) |> 
+  broom::tidy()
+
+nyc_airbnb |> 
+  filter(borough == "Manhattan",
+         neighborhood == "Chelsea") |> 
+  lm(price ~ stars + room_type, data = _) |> 
+  broom::tidy()
+```
+
+Let's do this for all neighborhoods.
+
+```{r}
+manhattan_neighborhood_fit_df = 
+nyc_airbnb |> 
+  filter(borough == "Manhattan") |> 
+  nest(data = -(borough: neighborhood)) |> 
+  mutate(
+    model = map(data, \(x) lm(price ~ stars + room_type, data = x)), 
+    results = map(model, broom::tidy)
+  ) |> 
+  select(neighborhood, results) |> 
+  unnest(results)
+```
+
+Look at the effect of room type
+
+```{r}
+manhattan_neighborhood_fit_df |> 
+  filter(str_detect(term, "room_type")) |> 
+  ggplot(aes(x = term, y = estimate)) +
+  geom_boxplot()
+```
+
+Finding that one outlier
+
+```{r}
+manhattan_neighborhood_fit_df |> 
+  filter(str_detect(term, "room_type")) |> 
+  filter(estimate > 0)
+
+nyc_airbnb |> 
+  filter(
+    neighborhood == "NoHo", 
+    room_type == "Shared room"
+  )
+```
+
