@@ -132,3 +132,79 @@ fit |>
 | Borough: Brooklyn | -49.75363 | 0.000000 |
 | Borough: Queens   | -77.04776 | 0.000000 |
 | Borough: Bronx    | -90.25393 | 0.000000 |
+
+## Some diagnositcs
+
+Initial EDA
+
+``` r
+nyc_airbnb |> 
+  ggplot((aes(x = stars, y = price))) +
+  geom_point() +
+  stat_smooth(method = "lm")
+```
+
+    ## `geom_smooth()` using formula = 'y ~ x'
+
+    ## Warning: Removed 9962 rows containing non-finite outside the scale range
+    ## (`stat_smooth()`).
+
+    ## Warning: Removed 9962 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
+
+![](linear_models_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+Most diagnostics use residuals.
+
+``` r
+modelr::add_residuals(nyc_airbnb, fit) |> 
+  ggplot(aes(x = resid)) +
+  geom_histogram()
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 9962 rows containing non-finite outside the scale range
+    ## (`stat_bin()`).
+
+![](linear_models_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+``` r
+modelr::add_residuals(nyc_airbnb, fit) |> 
+  ggplot(aes(x = borough, y = resid)) +
+  geom_violin() +
+  ylim(-200, 500)
+```
+
+    ## Warning: Removed 10202 rows containing non-finite outside the scale range
+    ## (`stat_ydensity()`).
+
+![](linear_models_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+Residuals against stars.
+
+``` r
+modelr::add_residuals(nyc_airbnb, fit) |> 
+  ggplot(aes(x = stars, y = resid)) +
+  geom_point()
+```
+
+    ## Warning: Removed 9962 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
+
+![](linear_models_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+Residuals against fitted values.
+
+``` r
+nyc_airbnb |> 
+  modelr::add_residuals(fit) |> 
+  modelr::add_predictions(fit) |> 
+  ggplot(aes(x=pred, y = resid)) +
+  geom_point()
+```
+
+    ## Warning: Removed 9962 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
+
+![](linear_models_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
