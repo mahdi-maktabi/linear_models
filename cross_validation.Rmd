@@ -1,0 +1,14 @@
+---
+title: "Cross Validation"
+author: "Mahdi Maktabi"
+date: "Nov 12, 2024"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(p8105.datasets)
+library(modelr)
+library(mgcv)
+```
+
