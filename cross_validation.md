@@ -1,24 +1,13 @@
----
-title: "Cross Validation"
-author: "Mahdi Maktabi"
-date: "Nov 12, 2024"
-output: github_document
----
+Cross Validation
+================
+Mahdi Maktabi
+Nov 12, 2024
 
 Load key packages.
 
-```{r setup, include=FALSE}
-library(tidyverse)
-library(modelr)
-library(mgcv)
-library(SemiPar)
-
-set.seed(1) # this just makes it so any time we rerun a code it will give the same random results
-```
-
 Look at LIDAR data
 
-```{r}
+``` r
 data("lidar")
 
 lidar_df = 
@@ -27,34 +16,39 @@ lidar_df =
   mutate(id = row_number())
 ```
 
-```{r}
+``` r
 lidar_df |> 
   ggplot(aes(x = range, y = logratio)) +
   geom_point()
 ```
 
+![](cross_validation_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+
 ## Try to do CV
 
-We will compare 3 model -- one linear, one smooth, one wiggly.
+We will compare 3 model – one linear, one smooth, one wiggly.
 
 Construct training and testing df.
 
-```{r}
+``` r
 train_df = sample_frac(lidar_df, size = .8)
 test_df = anti_join(lidar_df, train_df, by = "id")
 ```
 
-Look at these - this will overlay the one with the missing points and then overlay the points in red.
+Look at these - this will overlay the one with the missing points and
+then overlay the points in red.
 
-```{r}
+``` r
 ggplot(train_df, aes(x = range, y = logratio)) +
   geom_point() +
   geom_point(data = test_df, color = "red")
 ```
 
+![](cross_validation_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
 Fit three models.
 
-```{r}
+``` r
 linear_mod = lm(logratio ~ range, data = train_df)
 smooth_mod = gam(logratio ~ s(range), data = train_df)
 wiggly_mod = gam(logratio ~ s(range, k = 30), sp = 10e-6, data = train_df)
@@ -62,7 +56,7 @@ wiggly_mod = gam(logratio ~ s(range, k = 30), sp = 10e-6, data = train_df)
 
 Look at these fits.
 
-```{r}
+``` r
 train_df |> 
   add_predictions(linear_mod) |> 
   ggplot(aes(x = range, y = logratio)) +
@@ -71,7 +65,9 @@ train_df |>
   geom_line(aes(y = pred), color = "red")
 ```
 
-```{r}
+![](cross_validation_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+``` r
 train_df |> 
   add_predictions(wiggly_mod) |> 
   ggplot(aes(x = range, y = logratio)) +
@@ -80,7 +76,9 @@ train_df |>
   geom_line(aes(y = pred), color = "red")
 ```
 
-```{r}
+![](cross_validation_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
 train_df |> 
   add_predictions(smooth_mod) |> 
   ggplot(aes(x = range, y = logratio)) +
@@ -89,15 +87,29 @@ train_df |>
   geom_line(aes(y = pred), color = "red")
 ```
 
-Smooth model doesn't do too much - captures the trends we are looking for ("just right").
+![](cross_validation_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
+Smooth model doesn’t do too much - captures the trends we are looking
+for (“just right”).
 
 Now compare these numerically using RMSE.
 
-```{r}
+``` r
 rmse(linear_mod, test_df)
+```
+
+    ## [1] 0.127317
+
+``` r
 rmse(smooth_mod, test_df)
+```
+
+    ## [1] 0.08302008
+
+``` r
 rmse(wiggly_mod, test_df)
 ```
+
+    ## [1] 0.08848557
 
 ## Repeat the train / test split
